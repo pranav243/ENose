@@ -22,12 +22,13 @@ class _ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
   int cnt = 0;
   String docId = 'T0';
   int oldfieldname = 0;
-  int fieldname = 1;
+  int fieldname = 50;
 
   final _firestore = FirebaseFirestore.instance;
   late AnimationController _controller;
   late Animation<double>? _animation; // Make animation nullable
   late Timer _timer;
+  Map<String, int> sensorData = {};
 
   @override
   void initState() {
@@ -48,24 +49,11 @@ class _ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
       docId = 'T${cnt}';
       await processCertainDocument(docId);
     });
-    // _controller = AnimationController(
-    //   vsync: this,
-    //   duration:
-    //       const Duration(seconds: 1, milliseconds: 200), // Animation duration
-    // );
-    // _animation = Tween<double>(begin: oldfieldname * 100, end: fieldname * 100)
-    //     .animate(_controller)
-    //   ..addListener(() {
-    //     setState(() {});
-    //   });
-
-    // _controller.forward(); // Start the animation
   }
 
   Future<void> processCertainDocument(String documentId) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference collectionReference =
-        firestore.collection('Prediction');
+    CollectionReference collectionReference = firestore.collection('Shelf1');
     DocumentSnapshot documentSnapshot =
         await collectionReference.doc(documentId).get();
     if (documentSnapshot.exists) {
@@ -74,16 +62,10 @@ class _ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
       setState(() {
         oldfieldname = fieldname;
         fieldname = documentData['pred'];
-        // print(fieldname);
-
-        // _animation =
-        //     Tween<double>(begin: oldfieldname * 100, end: fieldname * 100)
-        //         .animate(_controller)
-        //       ..addListener(() {
-        //         setState(() {});
-        //       });
-
-        // _controller.forward();
+        documentData['values'].forEach((key, value) {
+          sensorData[key] = value;
+          // print(key);
+        });
         cnt += 1;
       });
     } else {
@@ -115,90 +97,263 @@ class _ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
       color = Colors.green;
     }
     return Scaffold(
+        backgroundColor: Color.fromRGBO(102, 255, 255, 1),
         extendBody: true,
         appBar: AppBar(
-          title: Text('Shelf ${widget.shelfNo} : ${widget.item} '),
+          backgroundColor: Colors.transparent,
+          bottomOpacity: 0.0,
+          elevation: 0,
+          centerTitle: true,
+          // backgroundColor: const Color.fromRGBO(102, 255, 255, 1),
+          title: Text(
+            'Shelf${widget.shelfNo}: Milk ',
+            style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w900,
+                wordSpacing: 5,
+                color: Colors.black
+                // color: Colors.lightBlueAccent,
+                ),
+          ),
         ),
-        body: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                    child: Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: CircularPercentIndicator(
-                    radius: 100.0,
-                    lineWidth: 10.0,
-                    percent: fieldname / 100, // Use animated value
-                    center: Text(
-                      '${fieldname}',
-                      style: TextStyle(fontSize: 40.0, color: color),
+        body: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(50),
+              topRight: Radius.circular(50),
+            ),
+          ),
+          child: Center(
+            child: Container(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(
+                        child: Text(
+                          'Health-O-Meter',
+                        ),
+                      ),
                     ),
-                    circularStrokeCap: CircularStrokeCap.round,
-                    progressColor: color,
-                  ),
-                )),
-                // Display a real-time graph of positive data
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width * 0.8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: RealTimeGraph(
-                      stream: stream,
+                    Center(
+                        child: Container(
+                      // padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16.0),
+                      child: CircularPercentIndicator(
+                        radius: 100.0,
+                        lineWidth: 25.0,
+                        percent: fieldname / 100, // Use animated value
+                        center: Text(
+                          '${fieldname}',
+                          style: TextStyle(fontSize: 40.0, color: color),
+                        ),
+                        circularStrokeCap: CircularStrokeCap.round,
+                        progressColor: color,
+                      ),
+                    )),
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-4: Provides concentration of CNG, CH\u2084',
+                      ),
                     ),
-                  ),
-                ),
-
-                // Display a real-time graph of positive data as points
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width * 0.8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: RealTimeGraph(
-                      stream: stream,
-                      displayMode: ChartDisplay.points,
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("1"),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-
-                // Display a real-time graph of positive and negative data
-                const SizedBox(height: 32),
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Supports negative values :',
-                  ),
-                ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width * 0.8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: RealTimeGraph(
-                      stream: stream.map((value) => value - 150),
-                      supportNegativeValuesDisplay: true,
-                      xAxisColor: Colors.black12,
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-6: Provides concentration of C\u2083H\u2088,C\u2084H\u2081\u2080',
+                      ),
                     ),
-                  ),
-                ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width * 0.8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: RealTimeGraph(
-                      stream: stream.map((value) => value - 150),
-                      supportNegativeValuesDisplay: true,
-                      displayMode: ChartDisplay.points,
-                      xAxisColor: Colors.black12,
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("2"),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-7: Provides concentration of CO',
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("3"),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-5: Provides concentration of H\u2082, LPG, CH\u2084',
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("4"),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-8: Provides Concentration of H\u2082',
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("5"),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-135: Provides Concentration of NH\u2083, ',
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("6"),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Sensor MQ-2:',
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Color.fromRGBO(
+                                16, 222, 168, 1), // Choose your border color
+                            width: 2.0, // Choose your border width
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              10.0), // Optional: for rounded corners
+                        ),
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        height: MediaQuery.of(context).size.width * 0.8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: RealTimeGraph(
+                            stream: getSesnsorData("7"),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ));
@@ -206,7 +361,13 @@ class _ShelfState extends State<Shelf> with SingleTickerProviderStateMixin {
 
   Stream<double> getData() {
     return Stream.periodic(const Duration(milliseconds: 1000), (_) {
-      return (fieldname*10.0);
+      return (fieldname * 10.0);
+    }).asBroadcastStream();
+  }
+
+  Stream<double> getSesnsorData(i) {
+    return Stream.periodic(const Duration(milliseconds: 1000), (_) {
+      return (sensorData[i]! * 1.0);
     }).asBroadcastStream();
   }
 }
